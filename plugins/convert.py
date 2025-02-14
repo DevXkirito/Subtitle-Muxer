@@ -3,11 +3,44 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQ
 import os
 import pysubs2
 
+app = Client("subtitle_bot")
+
 # Track user states
 user_states = {}
 
+# Subtitle conversion functions using pysubs2
+def convert_srt_to_ass(srt_file):
+    subs = pysubs2.load(srt_file, encoding="utf-8")
+    output_file = srt_file.replace(".srt", ".ass")
+    subs.save(output_file, format="ass")
+    return output_file
+
+def convert_ass_to_srt(ass_file):
+    subs = pysubs2.load(ass_file, encoding="utf-8")
+    output_file = ass_file.replace(".ass", ".srt")
+    subs.save(output_file, format="srt")
+    return output_file
+
+def convert_txt_to_ass(txt_file):
+    with open(txt_file, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+
+    subs = pysubs2.Subs()
+    start_time = 0
+    duration = 3000  # Each line lasts 3 seconds
+
+    for line in lines:
+        text = line.strip()
+        if text:
+            subs.append(pysubs2.Line(start=start_time, end=start_time + duration, text=text))
+            start_time += duration + 1000  # 1s gap between lines
+
+    output_file = txt_file.replace(".txt", ".ass")
+    subs.save(output_file, format="ass")
+    return output_file
+
 # Command: /convert - Show format options
-@Client.on_message(filters.command("convert") & filters.private)
+@app.on_message(filters.command("convert"))
 async def start_conversion(client, message):
     user_id = message.from_user.id
     user_states[user_id] = {"waiting_for_format": True}  # Mark user as selecting format
@@ -22,9 +55,9 @@ async def start_conversion(client, message):
         "Select the subtitle format you want to convert:",
         reply_markup=InlineKeyboardMarkup(buttons)
     )
-    
+
 # Handle format selection
-@Client.on_callback_query(filters.regex("^format_"))
+@app.on_callback_query(filters.regex("^format_"))
 async def handle_format_selection(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     conversion_type = callback_query.data.replace("format_", "")
@@ -35,34 +68,22 @@ async def handle_format_selection(client, callback_query: CallbackQuery):
     }
 
     await callback_query.message.edit_text(
-        f"Now, please send me the subtitle file you want to convert to `{conversion_type.upper()}` format."
+        "Now, please send me the subtitle file you want to convert."
     )
 
 # Handle subtitle file upload
-@Client.on_message(filters.document)
+@app.on_message(filters.document)
 async def handle_subtitle(client, message):
     user_id = message.from_user.id
     user_data = user_states.get(user_id)
 
     if not user_data or "waiting_for_file" not in user_data:
-        await message.reply_text("❌ Please use /convert first and select a format before sending a file.")
+        await message.reply_text("Please use /convert first and select a format before sending a file.")
         return
 
     # Download file
     file_path = await message.download()
     conversion_type = user_data["conversion_type"]
-
-    # Check file extension before conversion
-    file_extension = os.path.splitext(file_path)[-1].lower()
-    if conversion_type == "srt_ass" and file_extension != ".srt":
-        await message.reply_text("❌ Please send a `.srt` file.")
-        return
-    elif conversion_type == "ass_srt" and file_extension != ".ass":
-        await message.reply_text("❌ Please send an `.ass` file.")
-        return
-    elif conversion_type == "txt_ass" and file_extension != ".txt":
-        await message.reply_text("❌ Please send a `.txt` file.")
-        return
 
     # Perform conversion
     converted_file = None
@@ -75,8 +96,10 @@ async def handle_subtitle(client, message):
 
     # Send converted file if successful
     if converted_file:
-        await message.reply_document(converted_file, caption="✅ Here is your converted subtitle file.")
+        await message.reply_document(converted_file, caption="Here is your converted subtitle file.")
         os.remove(converted_file)  # Cleanup after sending
 
     os.remove(file_path)  # Remove original file
     user_states.pop(user_id, None)  # Reset user state
+
+app.run()
