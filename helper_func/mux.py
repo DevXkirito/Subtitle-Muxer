@@ -74,10 +74,12 @@ async def generate_screenshots(video_path, num_screenshots=5):
 
     return screenshot_paths
 
-def screenshot_keyboard(screenshots):
-    """Generate InlineKeyboardMarkup for screenshots."""
-    buttons = [[InlineKeyboardButton(f"Screenshot {i+1}", url=f"file://{screenshots[i]}")] for i in range(len(screenshots))]
-    return InlineKeyboardMarkup(buttons)
+async def send_screenshots(msg, screenshots):
+    """Send screenshots as images instead of URL buttons."""
+    if screenshots:
+        await msg.reply_text("📸 **Screenshots Generated:**")
+        for screenshot in screenshots:
+            await msg.reply_photo(screenshot)
 
 async def softmux_vid(vid_filename, sub_filename, msg):
     start = time.time()
@@ -103,10 +105,9 @@ async def softmux_vid(vid_filename, sub_filename, msg):
 
     if process.returncode == 0:
         await safe_edit_message(msg, f'✅ **Muxing Completed!**\n⏳ Time: {round(time.time() - start)}s')
-        
+
         screenshots = await generate_screenshots(out_location)
-        if screenshots:
-            await msg.reply_text(f"📸 **Screenshots Generated:**", reply_markup=screenshot_keyboard(screenshots))
+        await send_screenshots(msg, screenshots)
 
         return output
     else:
@@ -134,7 +135,7 @@ async def hardmux_vid(vid_filename, sub_filename, msg):
             f"'FontName=HelveticaRounded-Bold,FontSize={Config.FONT_SIZE},"
             f"PrimaryColour={Config.FONT_COLOR},Outline={Config.BORDER_WIDTH}',"
             f"drawtext=text='{Config.WATERMARK}':fontfile='{font_path}':"
-            "x=w-tw-10:y=10:fontsize=25:fontcolor=white:"
+            "x=w-tw-10:y=10:fontsize=24:fontcolor=white:"
             "borderw=2:bordercolor=black"
         ),
         '-c:v', 'libx265', '-preset', 'ultrafast', '-crf', '20',
@@ -152,8 +153,7 @@ async def hardmux_vid(vid_filename, sub_filename, msg):
         await safe_edit_message(msg, f'✅ **Muxing Completed!**\n⏳ Time: {round(time.time() - start)}s')
 
         screenshots = await generate_screenshots(out_location)
-        if screenshots:
-            await msg.reply_text(f"📸 **Screenshots Generated:**", reply_markup=screenshot_keyboard(screenshots))
+        await send_screenshots(msg, screenshots)
 
         return output
     else:
