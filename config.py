@@ -3,11 +3,11 @@ import os
 class Config:
     # Font Configuration
     FONT_NAME = "HelveticaRounded-Bold"  # Default font name
-    FONT_SIZE = 20       # Default font size
+    FONT_SIZE = 18       # Default font size
     FONT_COLOR = "&H00FFFFFF"  # ARGB format (White)
     BORDER_COLOR = "&H00000000"  # ARGB format (Black)
     BORDER_WIDTH = 1.5
-    WATERMARK = "CHS Anime"
+    WATERMARK = "CHS ANIME"
 
     # Bot Configuration
     BOT_TOKEN = os.environ.get('BOT_TOKEN', None)
