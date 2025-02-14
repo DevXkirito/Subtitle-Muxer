@@ -2,20 +2,18 @@ from pyrogram import Client, filters
 import os
 import subprocess
 
-app = Client("subtitle_bot")
-
 # Dictionary to track users waiting for a video file
 waiting_for_video = {}
 
 # Command: /extract
-@app.on_message(filters.command("extract"))
+@Client.on_message(filters.command("extract"))
 async def extract_subtitle_command(client, message):
     user_id = message.from_user.id
     waiting_for_video[user_id] = True  # Mark user as waiting for a file
     await message.reply_text("📂 Please send me a video file, and I'll extract the subtitles.")
 
 # Handle video file upload
-@app.on_message(filters.video | filters.document)
+@Client.on_message(filters.video | filters.document)
 async def handle_video(client, message):
     user_id = message.from_user.id
     if user_id not in waiting_for_video or not waiting_for_video[user_id]:
@@ -38,5 +36,3 @@ async def handle_video(client, message):
 
     os.remove(video_path)  # Cleanup
     waiting_for_video.pop(user_id, None)  # Remove from waiting list
-
-app.run()
