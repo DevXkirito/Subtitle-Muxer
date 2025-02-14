@@ -3,13 +3,11 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQ
 import os
 import pysubs2
 
-app = Client("subtitle_bot")
-
 # Track user states
 user_states = {}
 
 # Command: /convert - Show format options
-@app.on_message(filters.command("convert"))
+@Client.on_message(filters.command("convert"))
 async def start_conversion(client, message):
     user_id = message.from_user.id
     user_states[user_id] = {"waiting_for_format": True}  # Mark user as selecting format
@@ -26,7 +24,7 @@ async def start_conversion(client, message):
     )
 
 # Handle format selection
-@app.on_callback_query(filters.regex("^format_"))
+@Client.on_callback_query(filters.regex("^format_"))
 async def handle_format_selection(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     conversion_type = callback_query.data.replace("format_", "")
@@ -41,7 +39,7 @@ async def handle_format_selection(client, callback_query: CallbackQuery):
     )
 
 # Handle subtitle file upload
-@app.on_message(filters.document)
+@Client.on_message(filters.document)
 async def handle_subtitle(client, message):
     user_id = message.from_user.id
     user_data = user_states.get(user_id)
@@ -101,5 +99,3 @@ def convert_txt_to_ass(txt_file):
     output_file = txt_file.replace(".txt", ".ass")
     subs.save(output_file, format="ass")
     return output_file
-
-app.run()
