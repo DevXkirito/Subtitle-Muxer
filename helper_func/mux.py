@@ -3,7 +3,6 @@ import time
 import re
 import asyncio
 import os
-import random
 import json
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -49,51 +48,29 @@ async def read_stderr(start, msg, process):
 
     return "\n".join(error_log)
 
-async def get_video_duration(video_path):
-    """Fetch the duration of the video using FFmpeg."""
-    command = [
-        'ffprobe', '-v', 'quiet', '-print_format', 'json',
-        '-show_format', '-i', video_path
-    ]
-
-    process = await asyncio.create_subprocess_exec(
-        *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-    stdout, _ = await process.communicate()
-
-    if process.returncode == 0:
-        try:
-            metadata = json.loads(stdout)
-            return float(metadata["format"]["duration"])
-        except Exception:
-            return None
-    return None
-
 async def generate_screenshots(video_path, num_screenshots=5):
-    """Generate multiple random screenshots from the video."""
-    duration = await get_video_duration(video_path)
-    if not duration:
-        return []
-
-    timestamps = [str(round(random.uniform(5, max(10, duration - 10)), 2)) for _ in range(num_screenshots)]
+    """Generate multiple screenshots at fixed intervals."""
     screenshot_paths = []
 
-    for i, timestamp in enumerate(timestamps):
-        screenshot_filename = f"{os.path.splitext(video_path)[0]}_screenshot_{i+1}.jpg"
+    for i in range(num_screenshots):
+        timestamp = i * 10  # Take a screenshot every 10 seconds
+        screenshot_filename = f"{os.path.splitext(os.path.basename(video_path))[0]}_screenshot_{i+1}.jpg"
         screenshot_path = os.path.join(Config.DOWNLOAD_DIR, screenshot_filename)
 
         command = [
-            'ffmpeg', '-hide_banner', '-ss', timestamp, '-i', video_path,
+            'ffmpeg', '-hide_banner', '-ss', str(timestamp), '-i', video_path,
             '-frames:v', '1', '-q:v', '2', '-y', screenshot_path
         ]
 
         process = await asyncio.create_subprocess_exec(
             *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
-        await process.wait()
+        stdout, stderr = await process.communicate()
 
         if process.returncode == 0 and os.path.exists(screenshot_path):
             screenshot_paths.append(screenshot_path)
+        else:
+            print(f"⚠️ Screenshot {i+1} failed: {stderr.decode()}")
 
     return screenshot_paths
 
