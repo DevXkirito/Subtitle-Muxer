@@ -134,7 +134,7 @@ async def hardmux_vid(vid_filename, sub_filename, msg):
             f"'FontName=HelveticaRounded-Bold,FontSize={Config.FONT_SIZE},"
             f"PrimaryColour={Config.FONT_COLOR},Outline={Config.BORDER_WIDTH}',"
             f"drawtext=text='{Config.WATERMARK}':fontfile='{font_path}':"
-            "x=w-tw-10:y=10:fontsize=24:fontcolor=white:"
+            "x=w-tw-10:y=10:fontsize=25:fontcolor=white:"
             "borderw=2:bordercolor=black"
         ),
         '-c:v', 'libx265', '-preset', 'ultrafast', '-crf', '20',
