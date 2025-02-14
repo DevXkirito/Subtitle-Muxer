@@ -2,3 +2,6 @@ pyrogram==2.0.106
 tgcrypto
 requests==2.24.0
 pysubs2
+json5
+pillow
+ffmpeg
