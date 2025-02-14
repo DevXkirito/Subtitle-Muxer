@@ -49,6 +49,7 @@ async def start_conversion(client, message):
         [InlineKeyboardButton("SRT ➝ ASS", callback_data="format_srt_ass")],
         [InlineKeyboardButton("ASS ➝ SRT", callback_data="format_ass_srt")],
         [InlineKeyboardButton("TXT ➝ ASS", callback_data="format_txt_ass")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="cancel_conversion")],
     ]
 
     await message.reply_text(
@@ -68,8 +69,26 @@ async def handle_format_selection(client, callback_query: CallbackQuery):
     }
 
     await callback_query.message.edit_text(
-        "Now, please send me the subtitle file you want to convert."
+        "Now, please send me the subtitle file you want to convert.\n\n"
+        "If you want to cancel, use /cancel."
     )
+
+# Handle Cancel
+@app.on_callback_query(filters.regex("^cancel_conversion"))
+async def handle_cancel(client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    user_states.pop(user_id, None)  # Remove user state
+
+    await callback_query.message.edit_text("Conversion process canceled. You can start again with /convert.")
+
+@app.on_message(filters.command("cancel"))
+async def cancel_conversion(client, message):
+    user_id = message.from_user.id
+    if user_id in user_states:
+        user_states.pop(user_id)
+        await message.reply_text("Conversion process canceled. You can start again with /convert.")
+    else:
+        await message.reply_text("You have no active conversion process.")
 
 # Handle subtitle file upload
 @app.on_message(filters.document)
