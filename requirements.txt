@@ -5,3 +5,4 @@ pysubs2
 json5
 pillow
 ffmpeg
+python-dotenv
